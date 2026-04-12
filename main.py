@@ -5,6 +5,7 @@ import string
 import markdown
 from fastapi import Depends, FastAPI, File, HTTPException, Security, UploadFile
 from fastapi.security.api_key import APIKeyHeader, APIKeyQuery
+from pygments.formatters import HtmlFormatter
 from starlette.responses import FileResponse
 from starlette.status import HTTP_403_FORBIDDEN
 
@@ -50,25 +51,23 @@ async def upload_markdown(
     # Read the uploaded Markdown file content
     markdown_content = await file.read()
 
-    lines = markdown_content.decode("utf-8").split("\n")
-
-    # Filter out lines starting with "```" or "---"
-    filtered_lines = [
-        line
-        for line in lines
-        if not line.startswith("```") and not line.startswith("---")
-    ]
-
-    result = "\n".join(filtered_lines)
+    decoded = markdown_content.decode("utf-8")
 
     # Convert Markdown to HTML
-    html_content = markdown.markdown(result)
+    html_content = markdown.markdown(
+        decoded,
+        extensions=["tables", "fenced_code", "codehilite"],
+        extension_configs={"codehilite": {"guess_lang": True, "linenums": False}},
+    )
 
     # Generate a random alphanumeric ID
     random_id = generate_random_id()
 
     # Set the desired font family
     font_family = "Arial, sans-serif"
+
+    # code highlight
+    css = HtmlFormatter(style="friendly").get_style_defs(".codehilite")
 
     # Wrap the HTML content with a style tag to set the font family
     html_with_font = f"""
@@ -80,8 +79,19 @@ async def upload_markdown(
         <title>Document</title>
         <style>
             body {{
-                font-family: {font_family};
-            }}
+            font-family: {font_family};
+        }}
+        {css}
+        .codehilite {{
+            background: #e0e0e0;
+            border-radius: 4px;
+            padding: 1em;
+            overflow-x: auto;
+        }}
+        .codehilite pre {{
+            margin: 0;
+            background: transparent;  /* prevent double background */
+        }}
         </style>
     </head>
     <body>
