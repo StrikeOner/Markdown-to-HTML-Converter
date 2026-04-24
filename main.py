@@ -56,7 +56,7 @@ async def upload_markdown(
     # Convert Markdown to HTML
     html_content = markdown.markdown(
         decoded,
-        extensions=["tables", "fenced_code", "codehilite"],
+        extensions=["tables", "fenced_code", "codehilite", "nl2br"],
         extension_configs={"codehilite": {"guess_lang": True, "linenums": False}},
     )
 
